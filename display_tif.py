@@ -3,8 +3,8 @@ from PIL import Image, ImageEnhance
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-FILE_PATH = 'test_tif.tif'
-SAVE_GIF = False 
+FILE_PATH = 'dish2.tif'
+SAVE_GIF = True 
 SAVE_NAME = f"{FILE_PATH.split('.')[0]}.gif"
 CONTRAST_LEVEL = 2.0
 
