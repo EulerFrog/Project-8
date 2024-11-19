@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 FILE_PATH = 'dish2_ATP_1_MMStack_Pos0.ome.tif'
 CONTRAST_LEVEL = 2.0
-SAVE_PREFIX = None
+SAVE_PREFIX = 'contrast'
 
 # Min/Max Normalization
 def normalize(data):
@@ -41,28 +41,26 @@ img_avgs_with_contrast = []
 for img in images_with_contrast:
     img_avgs_with_contrast.append(np.average(img))
 
-fig, axs = plt.subplots(2,2,figsize=(20,10))
-fig.suptitle(f"Luminosity Over Time\n{FILE_PATH.split('.')[0].replace('_', ' ')}", fontsize=16)
+fig, axs = plt.subplots(2,1,figsize=(15,10))
+fig.suptitle(f"Fluorescence Over Time\n{FILE_PATH.split('.')[0].replace('_', ' ')}", fontsize=16)
 
 # Define x axis bounds (number of frames)
 x_axis_contrast = range(len(img_avgs_with_contrast))
 x_axis_no_contrast = range(len(img_avgs))
 
 # Draw subplot
-def subplot(axis, x, y, norm, contrast):
+def subplot(axis, x, y, contrast):
     axis.scatter(x, y, c='seagreen')
     axis.set_title(f"{'' if contrast else 'No'} Contrast Modification")
     axis.set_xlabel("Frame")
-    axis.set_ylabel("Avg Luminosity (Pixel Values)")
+    axis.set_ylabel("Avg Fluorescence (Pixel Values)")
 
-subplot(axs[0,0], x_axis_no_contrast, img_avgs, False, False) # No Norm, No Contrast
-subplot(axs[0,1], x_axis_no_contrast, normalize(img_avgs), True, False) # Norm, No Contrast
-subplot(axs[1,0], x_axis_contrast, img_avgs_with_contrast, False, True) # No Norm, Contrast
-subplot(axs[1,1], x_axis_contrast, normalize(img_avgs_with_contrast), True, True) # Norm, Contrast
+subplot(axs[0], x_axis_no_contrast, img_avgs, False) # No Contrast
+subplot(axs[1], x_axis_contrast, img_avgs_with_contrast, True) # Contrast
 
 plt.tight_layout()
 
 if SAVE_PREFIX is None:
     plt.show()
 else:
-    plt.savefig(f"{SAVE_PREFIX}_{FILE_PATH.split('.')[0]}_contrast{CONTRAST_LEVEL}_luminosity_plots.png")
+    plt.savefig(f"{SAVE_PREFIX}_{FILE_PATH.split('.')[0]}_contrast{CONTRAST_LEVEL}_fluorescence_plots.png")
