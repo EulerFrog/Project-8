@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib.animation import FuncAnimation
 from scipy.optimize import curve_fit
 
-DATA_DIR = ''
-FILE = 'dish2.tif'
+DATA_DIR = 'data'
+FILE = 'dish2_ATP_1_MMStack_Pos0.ome.tif'
 CONTRAST_LEVEL = 2.0
 SAVE_PREFIX = None 
 
@@ -20,9 +20,6 @@ def normalize(data):
     data_max = np.max(data)
     data_norm = (data - data_min) / (data_max - data_min)
     return data_norm
-
-def exponential(x,a,b,c):
-    return a*np.exp(b*x)+c
 
 def parse_frames(file=FILE, contrast=1.0):
     '''
@@ -79,11 +76,12 @@ def plot_fluor_over_time(img_avgs, img_avgs_with_contrast):
         plt.savefig(f"{SAVE_PREFIX}_{FILE.split('.')[0]}_contrast{CONTRAST_LEVEL}_fluorescence_plots.png")
 
 
-
 def plot_decay_over_time(data: list):
     '''
     data.shape = [cells,frames], contains average fluorescence values 
     '''
+
+    # Truncate data so we only have decay information
     y_values = []
     x_values = []
     for i in range(len(data)):
@@ -92,28 +90,40 @@ def plot_decay_over_time(data: list):
         x_values.extend(range(len(data[i])))
         y_values.extend(data[i])
 
+    # Plot decays
     for i in range(len(data)):
-        plt.scatter(range(len(data[i])-1), data[i][:-1], c="blue")
-        plt.scatter(range(len(data[i]))[-1], data[i][-1], c="red", zorder=5)
-    
-    popt, pcov = curve_fit(exponential, x_values, y_values)
-    a,b,c = popt 
-    x_fitted = np.linspace(min(x_values), max(x_values), 100)
-    y_fitted = exponential(x_fitted, a, b ,c)
+        plt.scatter(range(len(data[i])-1), data[i][:-1], c="black")
+        plt.scatter(range(len(data[i]))[-1], data[i][-1], c="blue", zorder=5)
 
-    plt.plot(x_fitted, y_fitted, c = "red", label = "fitted curve")
+    # Indicate equation governing line of best fit
+    def exponential(t,a,b,c):
+        return a * np.exp(b * t) + c
+
+    # Fit exponential curve
+    '''
+    maxfev: maximum iterations to find line
+    p0: initial guess; initialized to the sign of what the parameter should be
+    popt: optimal parameters (a, b, c)
+    '''
+    popt, pcov = curve_fit(exponential, x_values, y_values, maxfev=5000, p0=[1, -1, 1])
+    a,b,c = popt
+    x_fitted = np.linspace(min(x_values), max(x_values), 100)
+    y_fitted = exponential(x_fitted, a, b, c)
+
+    # Plot line of best fit
+    plt.plot(x_fitted, y_fitted, c = "red", label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
     plt.legend()
     plt.title("Fluorescence Decay Over Time")
     plt.xlabel("Time (s)")
     plt.ylabel("Fluorescence Pixel Value")
     plt.show()
-    
+
 
 def main():
-    img_avgs = parse_frames()
-    img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
-    
-    plot_decay_over_time([[3,2,1], [1,3,4,5,4,3,2],[8,9,10,9,8,7]])
+    #img_avgs = parse_frames()
+    #img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
+    #plot_fluor_over_time(img_avgs, img_avgs_with_contrast)
+    plot_decay_over_time([[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]])
 
 if __name__ == "__main__":
     main()
