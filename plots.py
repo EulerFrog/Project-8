@@ -4,9 +4,10 @@ from PIL import Image, ImageSequence, ImageEnhance
 import tifffile as tf
 import numpy as np
 from matplotlib.animation import FuncAnimation
+from scipy.optimize import curve_fit
 
-DATA_DIR = 'data'
-FILE = 'dish2_ATP_1_MMStack_Pos0.ome.tif'
+DATA_DIR = ''
+FILE = 'dish2.tif'
 CONTRAST_LEVEL = 2.0
 SAVE_PREFIX = None 
 
@@ -20,6 +21,8 @@ def normalize(data):
     data_norm = (data - data_min) / (data_max - data_min)
     return data_norm
 
+def exponential(x,a,b,c):
+    return a*np.exp(b*x)+c
 
 def parse_frames(file=FILE, contrast=1.0):
     '''
@@ -57,16 +60,12 @@ def subplot(axis, x, y, contrast):
     axis.set_ylabel("Avg Fluorescence (Pixel Values)")
 
 
-def plot_fluor_over_time():
-
-    img_avgs = parse_frames()
-    img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
-
+def plot_fluor_over_time(img_avgs, img_avgs_with_contrast):
     fig, axs = plt.subplots(2,1,figsize=(15,10))
     fig.suptitle(f"Fluorescence Over Time\n{FILE.split('.')[0].replace('_', ' ')}", fontsize=16)
 
     # Define x axis bounds (number of frames)
-    x_axis_contrast = range(len(img_avgs_with_contrast))
+    x_axis_contrast = [x for x in range(len(img_avgs_with_contrast)*3) if x % 3 == 0]
     x_axis_no_contrast = [x for x in range(len(img_avgs)*3) if x % 3 == 0]
 
     subplot(axs[0], x_axis_no_contrast, img_avgs, False) # No Contrast
@@ -80,5 +79,41 @@ def plot_fluor_over_time():
         plt.savefig(f"{SAVE_PREFIX}_{FILE.split('.')[0]}_contrast{CONTRAST_LEVEL}_fluorescence_plots.png")
 
 
+
+def plot_decay_over_time(data: list):
+    '''
+    data.shape = [cells,frames], contains average fluorescence values 
+    '''
+    y_values = []
+    x_values = []
+    for i in range(len(data)):
+        max_index = data[i].index(max(data[i]))
+        data[i] = data[i][max_index:]
+        x_values.extend(range(len(data[i])))
+        y_values.extend(data[i])
+
+    for i in range(len(data)):
+        plt.scatter(range(len(data[i])-1), data[i][:-1], c="blue")
+        plt.scatter(range(len(data[i]))[-1], data[i][-1], c="red", zorder=5)
+    
+    popt, pcov = curve_fit(exponential, x_values, y_values)
+    a,b,c = popt 
+    x_fitted = np.linspace(min(x_values), max(x_values), 100)
+    y_fitted = exponential(x_fitted, a, b ,c)
+
+    plt.plot(x_fitted, y_fitted, c = "red", label = "fitted curve")
+    plt.legend()
+    plt.title("Fluorescence Decay Over Time")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Fluorescence Pixel Value")
+    plt.show()
+    
+
+def main():
+    img_avgs = parse_frames()
+    img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
+    
+    plot_decay_over_time([[3,2,1], [1,3,4,5,4,3,2],[8,9,10,9,8,7]])
+
 if __name__ == "__main__":
-    plot_fluor_over_time()
+    main()
