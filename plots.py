@@ -8,15 +8,21 @@ from scipy.optimize import curve_fit
 from compute_regions import compute_regions
 
 DATA_DIR = 'data'
-FILE = 'dish2_ATP_1_MMStack_Pos0.ome.tif'
-ROI_PATH = 'roi.zip'
+FILE = 'data/dish2_ATP_1_MMStack_Pos0.ome.tif'
+ROI_PATH = 'data/roi.zip'
 CONTRAST_LEVEL = 2.0
-SAVE_PREFIX = None 
+SAVE_PREFIX = None
 
 def normalize(data):
-    flattened_data = [item for sublist in data for item in sublist]
-    data_np = np.array(flattened_data)
-    # breakpoint()
+    '''
+    Parameters:
+        - Data: length 200 (for a specific cell or averaged dish)
+    Function:
+        - Normalize data between [1,2] in the style of Katie Lane
+    Returns:
+        - List of normalized data
+    '''
+    data_np = np.array(data)
     min_norm_avgs = data_np / np.mean(data_np[-5:])
     full_norm_avgs = ((min_norm_avgs - 1) / ((np.mean(min_norm_avgs[:5])) -1))+1
     return full_norm_avgs.tolist()
@@ -80,24 +86,35 @@ def truncate_decay(data : np.ndarray):
     data.shape = [cells,frames], contains average fluorescence values 
     '''
     # Truncate data so we only have decay information
-    y_values = []
-    x_values = []
-    data = data.reshape(data.shape[1], data.shape[0])
+    #y_values = []
+    #x_values = []
+    data = data.T
     data = data.tolist()
     for i in range(len(data)):
         # max_index = data[i].index(max(data[i]))
         max_value = np.max(data[i])
         max_index = len(data[i]) - 1 - data[i][::-1].index(max_value)
         data[i] = data[i][max_index:]
-        x_values.extend(range(len(data[i])))
-        y_values.extend(data[i])
-    return data, x_values, y_values
+        #x_values.extend(range(len(data[i])))
+        #y_values.extend(data[i])
+    return data#, x_values, y_values
 
-def plot_decay_over_time(data: list, x_values, y_values):
+def plot_decay_over_time(data):
+
+    def frames_to_seconds(frames):
+        return [x for x in range(len(frames)*3) if x % 3 == 0]
+
     # Plot decays
+    x_values = []
+    y_values = []
+    max_len = 0
     for i in range(len(data)):
-        plt.scatter(range(len(data[i])-1), data[i][:-1], c="black")
-        plt.scatter(range(len(data[i]))[-1], data[i][-1], c="blue", zorder=5)
+        normalized_data = normalize(data[i])
+        plt.scatter(frames_to_seconds(range(len(normalized_data)-1)), normalized_data[:-1], c="black")
+        plt.scatter((len(normalized_data)-1)*3, normalized_data[-1], c="blue", zorder=5)
+        x_values.extend(range(len(normalized_data)))
+        y_values.extend(normalized_data)
+        max_len = len(normalized_data) if len(normalized_data) > max_len else max_len
 
     # Indicate equation governing line of best fit
     def exponential(t,a,b,c):
@@ -111,15 +128,15 @@ def plot_decay_over_time(data: list, x_values, y_values):
     '''
     popt, pcov = curve_fit(exponential, x_values, y_values, maxfev=5000, p0=[1, -1, 1])
     a,b,c = popt
-    x_fitted = np.linspace(min(x_values), max(x_values), 100)
+    x_fitted = np.linspace(min(x_values), max(x_values), max_len)
     y_fitted = exponential(x_fitted, a, b, c)
 
     # Plot line of best fit
-    plt.plot(x_fitted, y_fitted, c = "red", label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
+    plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
     plt.legend()
     plt.title("Fluorescence Decay Over Time")
     plt.xlabel("Time (s)")
-    plt.ylabel("Fluorescence Pixel Value")
+    plt.ylabel("Fluorescence (Normalized)")
     plt.show()
 
 
@@ -131,8 +148,8 @@ def main():
     # plot_decay_over_time([[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]])
 
     # data=[[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]]
-    data, x_values, y_values = truncate_decay(compute_regions())
-    plot_decay_over_time(normalize(data), x_values, y_values)
+    data = truncate_decay(compute_regions(FILE, ROI_PATH))
+    plot_decay_over_time(data)
 
 
 if __name__ == "__main__":
