@@ -5,12 +5,12 @@ import tifffile as tf
 import numpy as np
 from matplotlib.animation import FuncAnimation
 from scipy.optimize import curve_fit
+from compute_regions import 
 
 DATA_DIR = 'data'
 FILE = 'dish2_ATP_1_MMStack_Pos0.ome.tif'
 CONTRAST_LEVEL = 2.0
 SAVE_PREFIX = None 
-
 
 def normalize(data):
     '''
@@ -124,6 +124,7 @@ def main():
     #img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
     #plot_fluor_over_time(img_avgs, img_avgs_with_contrast)
     plot_decay_over_time([[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]])
+    roi_avgs = ''
 
 if __name__ == "__main__":
     main()
