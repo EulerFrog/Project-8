@@ -5,21 +5,21 @@ import tifffile as tf
 import numpy as np
 from matplotlib.animation import FuncAnimation
 from scipy.optimize import curve_fit
-from compute_regions import 
+from compute_regions import compute_regions
 
 DATA_DIR = 'data'
 FILE = 'dish2_ATP_1_MMStack_Pos0.ome.tif'
+ROI_PATH = 'roi.zip'
 CONTRAST_LEVEL = 2.0
 SAVE_PREFIX = None 
 
 def normalize(data):
-    '''
-    Min/Max Normalization
-    '''
-    data_min = np.min(data)
-    data_max = np.max(data)
-    data_norm = (data - data_min) / (data_max - data_min)
-    return data_norm
+    flattened_data = [item for sublist in data for item in sublist]
+    data_np = np.array(flattened_data)
+    # breakpoint()
+    min_norm_avgs = data_np / np.mean(data_np[-5:])
+    full_norm_avgs = ((min_norm_avgs - 1) / ((np.mean(min_norm_avgs[:5])) -1))+1
+    return full_norm_avgs.tolist()
 
 def parse_frames(file=FILE, contrast=1.0):
     '''
@@ -75,21 +75,25 @@ def plot_fluor_over_time(img_avgs, img_avgs_with_contrast):
     else:
         plt.savefig(f"{SAVE_PREFIX}_{FILE.split('.')[0]}_contrast{CONTRAST_LEVEL}_fluorescence_plots.png")
 
-
-def plot_decay_over_time(data: list):
+def truncate_decay(data : np.ndarray):
     '''
     data.shape = [cells,frames], contains average fluorescence values 
     '''
-
     # Truncate data so we only have decay information
     y_values = []
     x_values = []
+    data = data.reshape(data.shape[1], data.shape[0])
+    data = data.tolist()
     for i in range(len(data)):
-        max_index = data[i].index(max(data[i]))
+        # max_index = data[i].index(max(data[i]))
+        max_value = np.max(data[i])
+        max_index = len(data[i]) - 1 - data[i][::-1].index(max_value)
         data[i] = data[i][max_index:]
         x_values.extend(range(len(data[i])))
         y_values.extend(data[i])
+    return data, x_values, y_values
 
+def plot_decay_over_time(data: list, x_values, y_values):
     # Plot decays
     for i in range(len(data)):
         plt.scatter(range(len(data[i])-1), data[i][:-1], c="black")
@@ -123,8 +127,13 @@ def main():
     #img_avgs = parse_frames()
     #img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
     #plot_fluor_over_time(img_avgs, img_avgs_with_contrast)
-    plot_decay_over_time([[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]])
-    roi_avgs = ''
+
+    # plot_decay_over_time([[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]])
+
+    # data=[[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]]
+    data, x_values, y_values = truncate_decay(compute_regions())
+    plot_decay_over_time(normalize(data), x_values, y_values)
+
 
 if __name__ == "__main__":
     main()
