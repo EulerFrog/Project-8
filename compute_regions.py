@@ -45,4 +45,4 @@ def compute_regions(video_path = VIDEO_PATH, roi_path = ROI_PATH):
     return means
 
 if __name__ == '__main__':
-    np.save("means.npy", compute_regions())
+    np.save("means.npy", compute_regions()
