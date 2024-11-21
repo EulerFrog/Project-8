@@ -6,17 +6,13 @@ Flags:
     - gif generation 
     - multiple plots vs singular plots (w/ legend)
     - path to data directory 
-
-    Recondsider based on Galati's need: 
-
-    - normalization?
-    - contrast?
-    - downscaling?
-    - cell detection?
+    - line of best fit
+    - return data for each dish as csv
 '''
 
 
 def parse_args(argv):
+
     parser = argparse.ArgumentParser(description="Calcium Diffusion Fluorescence Video Analysis")
 
     # Path to the directory containing the video files
@@ -38,9 +34,7 @@ def parse_args(argv):
 
 
 def main(argv):
-    print(f"arguments passed: {argv}")
     args = parse_args(argv)
-    print(args)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
