@@ -81,23 +81,20 @@ def plot_fluor_over_time(img_avgs, img_avgs_with_contrast):
     else:
         plt.savefig(f"{SAVE_PREFIX}_{FILE.split('.')[0]}_contrast{CONTRAST_LEVEL}_fluorescence_plots.png")
 
+
 def truncate_decay(data : np.ndarray):
     '''
     data.shape = [cells,frames], contains average fluorescence values 
     '''
     # Truncate data so we only have decay information
-    #y_values = []
-    #x_values = []
     data = data.T
     data = data.tolist()
     for i in range(len(data)):
-        # max_index = data[i].index(max(data[i]))
         max_value = np.max(data[i])
         max_index = len(data[i]) - 1 - data[i][::-1].index(max_value)
         data[i] = data[i][max_index:]
-        #x_values.extend(range(len(data[i])))
-        #y_values.extend(data[i])
-    return data#, x_values, y_values
+    return data
+
 
 def plot_decay_over_time(data):
 
@@ -132,7 +129,7 @@ def plot_decay_over_time(data):
     y_fitted = exponential(x_fitted, a, b, c)
 
     # Plot line of best fit
-    plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
+    plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", linewidth=2, label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
     plt.legend()
     plt.title("Fluorescence Decay Over Time")
     plt.xlabel("Time (s)")
@@ -145,9 +142,6 @@ def main():
     #img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
     #plot_fluor_over_time(img_avgs, img_avgs_with_contrast)
 
-    # plot_decay_over_time([[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]])
-
-    # data=[[4,8,10,20,5,4,3,2], [100,80,40,20,10,5,2,1],[1,2,3,4,5,4,2]]
     data = truncate_decay(compute_regions(FILE, ROI_PATH))
     plot_decay_over_time(data)
 
