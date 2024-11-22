@@ -8,8 +8,8 @@ from scipy.optimize import curve_fit
 from compute_regions import compute_regions
 
 DATA_DIR = 'data'
-FILE = 'data/dish2_ATP_1_MMStack_Pos0.ome.tif'
-ROI_PATH = 'data/roi.zip'
+FILE = 'data/dish3.tif'
+ROI_PATH = 'data/dish3_roi.zip'
 CONTRAST_LEVEL = 2.0
 SAVE_PREFIX = None
 
@@ -107,8 +107,8 @@ def plot_decay_over_time(data):
     max_len = 0
     for i in range(len(data)):
         normalized_data = normalize(data[i])
-        plt.scatter(frames_to_seconds(range(len(normalized_data)-1)), normalized_data[:-1], c="black")
-        plt.scatter((len(normalized_data)-1)*3, normalized_data[-1], c="blue", zorder=5)
+        plt.scatter(frames_to_seconds(range(len(normalized_data)-1)), normalized_data[:-1], s=5, marker='o', c="black")
+        plt.scatter((len(normalized_data)-1)*3, normalized_data[-1], c="cadetblue", marker='*', zorder=5)
         x_values.extend(range(len(normalized_data)))
         y_values.extend(normalized_data)
         max_len = len(normalized_data) if len(normalized_data) > max_len else max_len
