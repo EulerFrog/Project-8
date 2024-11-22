@@ -1,48 +1,142 @@
-import matplotlib.pyplot as plt
 import os
-from PIL import Image, ImageSequence, ImageEnhance
-import tifffile as tf
 import numpy as np
-from matplotlib.animation import FuncAnimation
+import tifffile as tf
+import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from compute_regions import compute_regions
+from matplotlib.animation import FuncAnimation
+from PIL import Image, ImageSequence, ImageEnhance
+from utils.enums import NormalizationEnum
 
-DATA_DIR = 'data'
-FILE = 'data/dish3.tif'
+TIF_PATH = 'data/dish3.tif'
 ROI_PATH = 'data/dish3_roi.zip'
-CONTRAST_LEVEL = 2.0
 SAVE_PREFIX = None
 
-def normalize(data):
-    '''
-    Parameters:
-        - Data: length 200 (for a specific cell or averaged dish)
-    Function:
-        - Normalize data between [1,2] in the style of Katie Lane
-    Returns:
-        - List of normalized data
-    '''
-    data_np = np.array(data)
-    min_norm_avgs = data_np / np.mean(data_np[-5:])
-    full_norm_avgs = ((min_norm_avgs - 1) / ((np.mean(min_norm_avgs[:5])) -1))+1
-    return full_norm_avgs.tolist()
+def normalize(data, norm_type):
+    if norm_type == "minmax":
+        return NormalizationEnum.MINMAX(data)
+    elif norm_type == "katielane":
+        return NormalizationEnum.KATIELANE(data)
 
-def parse_frames(file=FILE, contrast=1.0):
+def frames_to_seconds(frames):
+    return [x for x in range(len(frames)*3) if x % 3 == 0]
+
+
+class Plotter:
+    def __init__(self, tif_path, roi_zip_path, normalizer, desired_contrast=1.0):
+        self.tif_path = tif_path
+        self.roi_zip_path = roi_zip_path
+        self.normalizer = normalizer
+        self.img_avgs, self.imgs = parse_frames(tif_path, self.normalizer, desired_contrast) # list[float], len = num_frames; list[list[float]], images
+        self.roi_vectors = compute_regions(tif_path, roi_zip_path) # list[list[float]], shape = (num_cells, num_frames)
+        self.decay_data = truncate_decay(self.roi_vectors) # list[list[float]], shape = (num_cells, {cell's decay length})
+
+
+    def plot_fluor_over_time(self, img_avgs=None, save=False):
+        """Plot flourescence of entire movie"""
+
+        if img_avgs is None:
+            img_avgs = self.img_avgs
+
+        plt.figure(figsize=(15,5))
+        plt.xlabel("Time (s)")
+        plt.ylabel("Fluorescence (Normalized)")
+        plt.title(f"Fluorescence Over Time\n{TIF_PATH.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
+
+        x_axis = frames_to_seconds(range(len(img_avgs)))
+        plt.scatter(x_axis, img_avgs, c='seagreen')
+        plt.tight_layout()
+
+        if not save:
+            plt.show()
+        else:
+            plt.savefig(f"{self.tif_path.split('.')[0]}_fluorescence.png")
+
+
+    def plot_decay_over_time(self, want_best_fit=True, color_by_cell=False, save=False, data=None):
+        """Plot fluorescence decay"""
+
+        if data is None:
+            data = self.decay_data
+
+        # Define plot coloring
+        if color_by_cell:
+            colors = plt.cm.tab20.colors
+            end_colors = colors
+        else:
+            colors = ['black' for _ in range(len(data))]
+            end_colors = ['darkturquoise' for _ in range(len(data))]
+
+        # Plot decays
+        x_values = []
+        y_values = []
+        max_len = 0
+        for i in range(len(data)):
+            normalized_data = normalize(data[i], self.normalizer)
+            plt.scatter(frames_to_seconds(range(len(normalized_data)-1)), normalized_data[:-1], s=5, marker='o', c=colors[i%len(colors)])
+            plt.scatter((len(normalized_data)-1)*3, normalized_data[-1], c=end_colors[i%len(colors)], marker='*', zorder=5)
+            x_values.extend(range(len(normalized_data)))
+            y_values.extend(normalized_data)
+            max_len = len(normalized_data) if len(normalized_data) > max_len else max_len
+
+        # Fit exponential curve
+        def exponential(t,a,b,c):
+            return a * np.exp(b * t) + c
+        popt, pcov = curve_fit(exponential, x_values, y_values, maxfev=5000, p0=[1, -1, 1])
+        a,b,c = popt
+        x_fitted = np.linspace(min(x_values), max(x_values), max_len)
+        y_fitted = exponential(x_fitted, a, b, c)
+
+        # Plot line of best fit
+        if want_best_fit:
+            plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", linewidth=2, label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
+            plt.legend()
+
+        plt.title(f"Fluorescence Decay Over Time\n{TIF_PATH.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
+        plt.xlabel("Time (s)")
+        plt.ylabel("Fluorescence (Normalized)")
+
+        if not save:
+            plt.show()
+        else:
+            plt.savefig(f"{self.tif_path.split('.')[0]}_decay.png")
+
+
+    def display_gif(self, save=False):
+
+        # Display gif live, don't save
+        if not save:
+            fig, ax = plt.subplots()
+            im = ax.imshow(self.imgs[0], cmap='gray')
+            ax.axis('off')
+            def update(frame):
+                print(frame)
+                plt.title(frame)
+                im.set_array(self.imgs[frame])
+                return [im]
+            ani = FuncAnimation(fig, update, frames=len(self.imgs), interval=50, blit=False)
+            plt.show()
+
+        # Save gif
+        else:
+            self.imgs[0].save(f"{self.tif_path.split('.')[0]}.gif", save_all=True, append_images=self.imgs[1:], duration=50, loop=0)
+
+
+
+def parse_frames(file=TIF_PATH, normalizer='katlielane', contrast=1.0):
     '''
         - Read frames from TIF file
         - Alter the contrast, 1.0 is no change
         - Average fluorescence of the whole image
     '''
-    frames = tf.imread(os.path.join(DATA_DIR, file))
+    frames = tf.imread(file)
     parsed_frames = []
-    for frame in frames:
-        # Convert to grayscale
-        image_pil = Image.fromarray(frame).convert('L')
 
-        # Apply contrast
+    # Adjust contrast and grayscale
+    for frame in frames:
+        image_pil = Image.fromarray(frame).convert('L')
         enhancer = ImageEnhance.Contrast(image_pil)
         image_enhanced = enhancer.enhance(contrast)
-
         np_image = np.array(image_enhanced)
         parsed_frames.append(np_image)
 
@@ -50,41 +144,14 @@ def parse_frames(file=FILE, contrast=1.0):
     frame_avgs = []
     for frame in parsed_frames:
         frame_avgs.append(np.average(frame))
-    return frame_avgs
 
-
-def subplot(axis, x, y, contrast):
-    '''
-    Draw subplot
-    '''
-    axis.scatter(x, y, c='seagreen')
-    axis.set_title(f"{'' if contrast else 'No'} Contrast Modification")
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Avg Fluorescence (Pixel Values)")
-
-
-def plot_fluor_over_time(img_avgs, img_avgs_with_contrast):
-    fig, axs = plt.subplots(2,1,figsize=(15,10))
-    fig.suptitle(f"Fluorescence Over Time\n{FILE.split('.')[0].replace('_', ' ')}", fontsize=16)
-
-    # Define x axis bounds (number of frames)
-    x_axis_contrast = [x for x in range(len(img_avgs_with_contrast)*3) if x % 3 == 0]
-    x_axis_no_contrast = [x for x in range(len(img_avgs)*3) if x % 3 == 0]
-
-    subplot(axs[0], x_axis_no_contrast, img_avgs, False) # No Contrast
-    subplot(axs[1], x_axis_contrast, img_avgs_with_contrast, True) # Contrast
-
-    plt.tight_layout()
-
-    if SAVE_PREFIX is None:
-        plt.show()
-    else:
-        plt.savefig(f"{SAVE_PREFIX}_{FILE.split('.')[0]}_contrast{CONTRAST_LEVEL}_fluorescence_plots.png")
+    normalized_data = normalize(frame_avgs, normalizer)
+    return normalized_data, parsed_frames
 
 
 def truncate_decay(data : np.ndarray):
     '''
-    data.shape = [cells,frames], contains average fluorescence values 
+    data.shape = [cells,frames], contains average fluorescence values
     '''
     # Truncate data so we only have decay information
     data = data.T
@@ -96,54 +163,11 @@ def truncate_decay(data : np.ndarray):
     return data
 
 
-def plot_decay_over_time(data):
-
-    def frames_to_seconds(frames):
-        return [x for x in range(len(frames)*3) if x % 3 == 0]
-
-    # Plot decays
-    x_values = []
-    y_values = []
-    max_len = 0
-    for i in range(len(data)):
-        normalized_data = normalize(data[i])
-        plt.scatter(frames_to_seconds(range(len(normalized_data)-1)), normalized_data[:-1], s=5, marker='o', c="black")
-        plt.scatter((len(normalized_data)-1)*3, normalized_data[-1], c="cadetblue", marker='*', zorder=5)
-        x_values.extend(range(len(normalized_data)))
-        y_values.extend(normalized_data)
-        max_len = len(normalized_data) if len(normalized_data) > max_len else max_len
-
-    # Indicate equation governing line of best fit
-    def exponential(t,a,b,c):
-        return a * np.exp(b * t) + c
-
-    # Fit exponential curve
-    '''
-    maxfev: maximum iterations to find line
-    p0: initial guess; initialized to the sign of what the parameter should be
-    popt: optimal parameters (a, b, c)
-    '''
-    popt, pcov = curve_fit(exponential, x_values, y_values, maxfev=5000, p0=[1, -1, 1])
-    a,b,c = popt
-    x_fitted = np.linspace(min(x_values), max(x_values), max_len)
-    y_fitted = exponential(x_fitted, a, b, c)
-
-    # Plot line of best fit
-    plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", linewidth=2, label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
-    plt.legend()
-    plt.title("Fluorescence Decay Over Time")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Fluorescence (Normalized)")
-    plt.show()
-
-
 def main():
-    #img_avgs = parse_frames()
-    #img_avgs_with_contrast = parse_frames(contrast=CONTRAST_LEVEL)
-    #plot_fluor_over_time(img_avgs, img_avgs_with_contrast)
-
-    data = truncate_decay(compute_regions(FILE, ROI_PATH))
-    plot_decay_over_time(data)
+    plotter = Plotter(TIF_PATH, ROI_PATH, 'katielane', desired_contrast=5.0)
+    plotter.plot_fluor_over_time()
+    plotter.plot_decay_over_time()
+    plotter.display_gif()
 
 
 if __name__ == "__main__":
