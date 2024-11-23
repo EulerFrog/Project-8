@@ -115,7 +115,7 @@ class Plotter:
             ani = FuncAnimation(fig, update, frames=len(self.imgs), interval=50, blit=False)
             plt.show()
 
-        # Save gif
+        # Save gif (not working)
         else:
             self.imgs[0].save(f"{self.tif_path.split('.')[0]}.gif", save_all=True, append_images=self.imgs[1:], duration=50, loop=0)
 

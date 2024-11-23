@@ -1,13 +1,9 @@
-import sys
 import os
+import sys
 
 from plots import Plotter
 from argument_parser import parse_args
-from helper_functions import missing_files
-
-# from display_tif import the gif function
-
-
+from helper_functions_old import missing_files
 
 def main(argv):
     '''
