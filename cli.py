@@ -5,6 +5,12 @@ import click
 from plots import Plotter
 from helper_fn import dir_check, create_dict
 
+# notes:
+# save functionality for gif, nor for fluo or decay plots working.
+# can we make sure they are named the same with exception of the extension and also just go back into the
+# path they pass.
+# make sure that line of best fit default is the same whether we want to do color by cell or not.
+
 @click.group()
 def cli():
     """
@@ -16,7 +22,7 @@ def cli():
 
     ADD ANY OTHER THING WE MIGHT CONSIDER RELEVANT
     
-    This is an example of how to run a command and get more details of the parameters for each command:
+    This is an example of how to run a command and get more details of the parameters for each command:\n
     python cli.py gif --help
     """
     pass
@@ -31,8 +37,11 @@ def gif(dir_path, save):
     """ 
     This command will generate GIFs for all the tiff files in the directory passed.
     If you do not specify to save, it will display the GIFs instead.
+    
+    Here is an example of how to save:\n
+    python cli.py gif --dir_path path/to/folder --save True
     """
-    print('gif')
+
     gif_dic = create_dict(dir_path, 'gif')
 
     for plot_i in gif_dic:
@@ -46,35 +55,70 @@ def gif(dir_path, save):
 @click.option('--dir_path', '-d',
               help='Path to the directory with the tiff files.')
 @click.option('--save', '-s',
-              help='Save the plot.It will be saved with the same name in the directory passed, with a .gif extension',
+              help='Save the plot.It will be saved with the same name in the directory passed, with a .png extension',
               default=False)
-@click.option('--title', '-t',
-              help='Change title of plot. This only works if the folder only has one pair of tiff:roi files')
-@click.option('--type', '-tp', type=click.Choice(['fluo', 'decay']),
-              help='fluorecence or decay plots')
-def single_plot(dir_path, save, title, type):
-    print('gr')
+@click.option('--type', '-t', type=click.Choice(['single', 'multiple']),
+              help='single or multiple dishes per plot')
+def fluo_plot(dir_path, save, type):
+    """
+    This command will generate a fluorecense plot for each of the tiff:roi pairs in the folder passed.
+    If you do not specify to save it will only display the image.
+    You can also choose whether you want to plot one dish or multiple dishes per plot.
     
-        
-    if args.plot_type is not None:
-        if 'single' in args.plot_type:
-            for plot_i in plot_dic:
-                plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
-                
-                if args.plot_type == 'single_fluor':
-                    print("Creating Single Fluoresence Over Time Plot")
-                    plotter.plot_fluor_over_time()
-                elif args.plot_type == 'single_decay':
-                    print("Creating Single Decay Over Time Plot")
-                    plotter.plot_decay_over_time()
-                elif args.gif:
-                    print("Creating GIF")
-                    plotter.display_gif
-                
+    Here is an example of how to create and save a fluorecense plot with one dish per plot:\n
+    python cli.py fluo-plot --dir_path path/to/folder --type single --save True
 
+    """
+    
+    plot_dic = create_dict(dir_path, 'gif')
+    
+    if type == 'single':
+        for plot_i in plot_dic:
+            plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
+            print("Creating Single Fluoresence Over Time Plot")
+            plotter.plot_fluor_over_time(save=save)
+    elif type == 'multiple':
+        pass 
+
+
+@click.command()
+@click.option('--dir_path', '-d',
+              help='Path to the directory with the tiff files.')
+@click.option('--save', '-s',
+              help='Save the plot.It will be saved with the same name in the directory passed, with a .png extension',
+              default=False)
+@click.option('--type', '-t', type=click.Choice(['single', 'multiple']),
+              help='single or multiple dishes per plot')
+@click.option('--best_fit', '-bf', 
+              help= "Plot the line of best fit onto the decay plot")
+@click.option('--color_cell', '-c', 
+              help='Will make each cell in the plot a different color')
+def decay_plot(dir_path, save, type, best_fit, color_cell):    
+    """
+    This command will generate a decay plot for each of the tiff:roi pairs in the folder passed.
+    If you do not specify to save it will only display the image.
+    You can also choose whether you want to plot one dish or multiple dishes per plot.
+    Additionally, you can decide whether you want to include the line of best fit onto the plot, 
+    and if you want to make each cell in the plot a different color.
+    
+    Here is an example of how to create and save a fluorecense plot with one dish per plot with each cell being a different color:\n
+    python cli.py decay-plot --dir_path path/to/folder --type single --save True --color_cell True
+
+    """
+    
+    plot_dic = create_dict(dir_path, 'gif')
+    
+    if type == 'single':
+        for plot_i in plot_dic:
+            plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
+            print("Creating Single Fluoresence Over Time Plot")
+            plotter.plot_decay_over_time(save=save,want_best_fit=best_fit, color_by_cell=color_cell)
+    elif type == 'multiple':
+        pass 
 
 cli.add_command(gif)
-cli.add_command(single_plot)
+cli.add_command(fluo_plot)
+cli.add_command(decay_plot)
 
 
 
