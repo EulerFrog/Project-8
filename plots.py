@@ -41,7 +41,7 @@ class Plotter:
         plt.figure(figsize=(15,5))
         plt.xlabel("Time (s)")
         plt.ylabel("Fluorescence (Normalized)")
-        plt.title(f"Fluorescence Over Time\n{TIF_PATH.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
+        plt.title(f"Fluorescence Over Time\n{self.tif_path.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
 
         x_axis = frames_to_seconds(range(len(img_avgs)))
         plt.scatter(x_axis, img_avgs, c='seagreen')
@@ -92,7 +92,7 @@ class Plotter:
             plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", linewidth=2, label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
             plt.legend()
 
-        plt.title(f"Fluorescence Decay Over Time\n{TIF_PATH.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
+        plt.title(f"Fluorescence Decay Over Time\n{self.tif_path.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
         plt.xlabel("Time (s)")
         plt.ylabel("Fluorescence (Normalized)")
 
@@ -103,14 +103,12 @@ class Plotter:
 
 
     def display_gif(self, save=False):
-
         # Display gif live, don't save
         if not save:
             fig, ax = plt.subplots()
             im = ax.imshow(self.imgs[0], cmap='gray')
             ax.axis('off')
             def update(frame):
-                print(frame)
                 plt.title(frame)
                 im.set_array(self.imgs[frame])
                 return [im]
