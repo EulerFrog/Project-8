@@ -59,6 +59,10 @@ def gif(dir_path, save):
               default=False)
 @click.option('--type', '-t', type=click.Choice(['single', 'multiple']),
               help='single or multiple dishes per plot')
+# add new option -- dish or whatever, list of integers specifying the actualy dish number.[1, 2, 3]
+# for either single or multiple, have options of what dishes
+# fix creat_dict in helper function to split on _ and identify the dish number, so its {dish#: (tif, roi)}
+
 def fluo_plot(dir_path, save, type):
     """
     This command will generate a fluorecense plot for each of the tiff:roi pairs in the folder passed.
