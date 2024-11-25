@@ -8,9 +8,7 @@ from matplotlib.animation import FuncAnimation
 from PIL import Image, ImageSequence, ImageEnhance
 from utils.enums import NormalizationEnum
 
-TIF_PATH = 'data/dish3.tif'
-ROI_PATH = 'data/dish3_roi.zip'
-SAVE_PREFIX = None
+SAVE_DIR = None
 
 def normalize(data, norm_type):
     if norm_type == "minmax":
@@ -27,8 +25,8 @@ class Plotter:
         self.tif_path = tif_path
         self.roi_zip_path = roi_zip_path
         self.normalizer = normalizer
-        self.img_avgs, self.imgs = parse_frames(tif_path, self.normalizer, desired_contrast) # list[float], len = num_frames; list[list[float]], images
-        self.roi_vectors = compute_regions(tif_path, roi_zip_path) # list[list[float]], shape = (num_cells, num_frames)
+        self.img_avgs, self.imgs = parse_frames(self.tif_path, self.normalizer, desired_contrast) # list[float], len = num_frames; list[list[float]], images
+        self.roi_vectors = compute_regions(self.tif_path, self.roi_zip_path) # list[list[float]], shape = (num_cells, num_frames)
         self.decay_data = truncate_decay(self.roi_vectors) # list[list[float]], shape = (num_cells, {cell's decay length})
 
 
@@ -41,7 +39,7 @@ class Plotter:
         plt.figure(figsize=(15,5))
         plt.xlabel("Time (s)")
         plt.ylabel("Fluorescence (Normalized)")
-        plt.title(f"Fluorescence Over Time\n{TIF_PATH.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
+        plt.title(f"Fluorescence Over Time\n{self.tif_path.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
 
         x_axis = frames_to_seconds(range(len(img_avgs)))
         plt.scatter(x_axis, img_avgs, c='seagreen')
@@ -50,7 +48,7 @@ class Plotter:
         if not save:
             plt.show()
         else:
-            plt.savefig(f"{self.tif_path.split('.')[0]}_fluorescence.png")
+            plt.savefig(f"{SAVE_DIR}/{self.tif_path.split('/')[-1].split('.')[0]}_fluorescence.png")
 
 
     def plot_decay_over_time(self, want_best_fit=True, color_by_cell=False, save=False, data=None):
@@ -92,14 +90,14 @@ class Plotter:
             plt.plot(frames_to_seconds(x_fitted), y_fitted, c = "red", linewidth=2, label=f"y = {a:.2f} * exp({b:.2f} * x) + {c:.2f}")
             plt.legend()
 
-        plt.title(f"Fluorescence Decay Over Time\n{TIF_PATH.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
+        plt.title(f"Fluorescence Decay Over Time\n{self.tif_path.split('/')[-1].split('.')[0].replace('_', ' ')}", fontsize=16)
         plt.xlabel("Time (s)")
         plt.ylabel("Fluorescence (Normalized)")
 
         if not save:
             plt.show()
         else:
-            plt.savefig(f"{self.tif_path.split('.')[0]}_decay.png")
+            plt.savefig(f"{SAVE_DIR}/{self.tif_path.split('/')[-1].split('.')[0]}_decay.png")
 
 
     def display_gif(self, save=False):
@@ -119,11 +117,11 @@ class Plotter:
 
         # Save gif
         else:
-            self.imgs[0].save(f"{self.tif_path.split('.')[0]}.gif", save_all=True, append_images=self.imgs[1:], duration=50, loop=0)
+            self.imgs[0].save(f"{SAVE_DIR}/{self.tif_path.split('/')[-1].split('.')[0]}.gif", save_all=True, append_images=self.imgs[1:], duration=50, loop=0)
 
 
 
-def parse_frames(file=TIF_PATH, normalizer='katlielane', contrast=1.0):
+def parse_frames(file, normalizer='katlielane', contrast=1.0):
     '''
         - Read frames from TIF file
         - Alter the contrast, 1.0 is no change
@@ -163,12 +161,14 @@ def truncate_decay(data : np.ndarray):
     return data
 
 
-def main():
-    plotter = Plotter(TIF_PATH, ROI_PATH, 'katielane', desired_contrast=5.0)
+def make_plots(tif_path, roi_path, desired_norm='katielane', desired_contrast=5.0):
+    SAVE_DIR = tif_path.split('/')[-2]
+
+    plotter = Plotter(tif_path, roi_path, desired_norm, desired_contrast)
     plotter.plot_fluor_over_time()
-    plotter.plot_decay_over_time()
+    plotter.plot_decay_over_time(color_by_cell=True)
     plotter.display_gif()
 
 
 if __name__ == "__main__":
-    main()
+    make_plots('data/dish3.tif', 'data/dish3_roi.zip')
