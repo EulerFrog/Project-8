@@ -161,6 +161,13 @@ def truncate_decay(data : np.ndarray):
     return data
 
 
+def multiple_plot(plot_types: list[str], data: list[Plotter], save=False):
+    # Demi passes list of Plotter objects, one for each of the tifs we want to plot
+    # We access the data we need for specific plot via the self vars of an entry of data
+    # Concat into the shape (num cells, num frames) or whatever a plot desires (but with *all* of the tif files' cells)
+    # Plot the ones we're asked to!
+
+
 def make_plots(tif_path, roi_path, desired_norm='katielane', desired_contrast=5.0):
     SAVE_DIR = tif_path.split('/')[-2]
 
