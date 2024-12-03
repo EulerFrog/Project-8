@@ -34,9 +34,9 @@ def dir_check(dir_path: str):
     else:
         print("All files are present")
         
-def create_dict(dir_path:str, plot:str):
+def create_dict(dir_path:str) -> dict:
     """
-    Generate a dictionary key = plot/gif_number, value = (tiff_path, roi_path)"""
+    Generate a dictionary key = dish_i, value = (tiff_path, roi_path)"""
     
     file_in_dir_list = os.listdir(dir_path)
     
@@ -46,7 +46,17 @@ def create_dict(dir_path:str, plot:str):
     
     file_list = [f[:-4] for f in file_in_dir_list if f.endswith('.tif')]
 
+    plot_dic = {}
 
-    plot_dic = {f"{plot}_{i}":(f"{file}.tif", f"{file}.zip") for (i, file) in enumerate(file_list)}
+    for file in file_list:
+        name = file.split('.')[0]
+        dish_name = name.split('_')
+
+        for word in dish_name:
+            if "dish" in word.lower():
+                dish_i = word
+                plot_dic[dish_i] = (f"{file}.tif", f"{file}.zip")
+            else:
+                continue
 
     return plot_dic

@@ -42,7 +42,9 @@ def gif(dir_path, save):
     python cli.py gif --dir_path path/to/folder --save True
     """
 
-    gif_dic = create_dict(dir_path, 'gif')
+    dir_check(dir_path)
+
+    gif_dic = create_dict(dir_path)
 
     for plot_i in gif_dic:
         plotter = Plotter(gif_dic[plot_i][0], gif_dic[plot_i][1], 'katielane', desired_contrast=5.0)
@@ -73,8 +75,8 @@ def fluo_plot(dir_path, save, type):
     python cli.py fluo-plot --dir_path path/to/folder --type single --save True
 
     """
-    
-    plot_dic = create_dict(dir_path, 'gif')
+    dir_check(dir_path)
+    plot_dic = create_dict(dir_path)
     
     if type == 'single':
         for plot_i in plot_dic:
@@ -109,8 +111,8 @@ def decay_plot(dir_path, save, type, best_fit, color_cell):
     python cli.py decay-plot --dir_path path/to/folder --type single --save True --color_cell True
 
     """
-    
-    plot_dic = create_dict(dir_path, 'gif')
+    dir_check(dir_path)
+    plot_dic = create_dict(dir_path)
     
     if type == 'single':
         for plot_i in plot_dic:
