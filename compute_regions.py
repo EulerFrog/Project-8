@@ -67,7 +67,7 @@ def compute_regions(video_path=VIDEO_PATH, roi_path=ROI_PATH):
     headers.extend([f'ROI #{x}' for x in range(1, means.shape[1] + 1)])
     SAVED_MEANS_HEADERS.append(headers)
 
-    print(SAVED_MEANS_HEADERS)
+    # print(SAVED_MEANS_HEADERS)
 
     return means
 

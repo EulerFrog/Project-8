@@ -4,6 +4,7 @@ import click
 
 from plots import Plotter
 from helper_fn import dir_check, create_dict
+from compute_regions import compute_regions, save_csv
 
 # notes:
 # save functionality for gif, nor for fluo or decay plots working.
@@ -122,10 +123,25 @@ def decay_plot(dir_path, save, type, best_fit, color_cell):
     elif type == 'multiple':
         pass 
 
+
+@click.command()
+@click.option('--dir_path', '-d',
+              help='Path to the directory with the tiff and roi files.')
+def export_csv(dir_path):
+
+    dir_check(dir_path)
+    plot_dic = create_dict(dir_path)
+
+    for k, v in plot_dic.items():
+        compute_regions(v[0], v[1])
+        save_csv(f'{dir_path}/{k}.csv')
+        
+    print('CSV files have been saved in the directory')
+
 cli.add_command(gif)
 cli.add_command(fluo_plot)
 cli.add_command(decay_plot)
-
+cli.add_command(export_csv)
 
 
 if __name__ == "__main__":
