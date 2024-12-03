@@ -1,5 +1,5 @@
-import argparse
 import sys
+import argparse
 
 '''
 Flags:
@@ -22,7 +22,7 @@ def parse_args(argv):
     parser.add_argument('-gif', '--gif', action='store_true', help='Generate and save gif of video')
 
     # Single dish vs multiple dish per plot
-    parser.add_argument('-plot', '--plot_type', type=str, choices=['single', 'multiple'], help='Plot single/multiple dishes on the same plot')
+    parser.add_argument('-plot', '--plot_type', type=str, choices=['single_fluor', 'single_decay', 'multiple'], help='Plot single/multiple dishes on the same plot', required=False)
 
     # Include line of best fit
     parser.add_argument('-line', '--line_of_best_fit', action='store_true', help='Include line of best fit')
