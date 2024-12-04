@@ -81,7 +81,7 @@ def fluo_plot(dir_path, save, type):
     
     if type == 'single':
         for plot_i in plot_dic:
-            plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
+            plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=1.0)
             print("Creating Single Fluoresence Over Time Plot")
             plotter.plot_fluor_over_time(save=save)
     elif type == 'multiple':
@@ -117,7 +117,7 @@ def decay_plot(dir_path, save, type, best_fit, color_cell):
     
     if type == 'single':
         for plot_i in plot_dic:
-            plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
+            plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=1.0)
             print("Creating Single Fluoresence Over Time Plot")
             plotter.plot_decay_over_time(save=save,want_best_fit=best_fit, color_by_cell=color_cell)
     elif type == 'multiple':
