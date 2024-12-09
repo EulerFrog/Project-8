@@ -19,10 +19,7 @@ def cli():
     Please make sure that the directory (folder path) passed contain tif files with roi files with the same name, except for the extension.
     For example test1.tiff, test1.zip would be a pair of matching files
     Please ensure that in the .zip files, the last roi is the background.
-    
-
-    ADD ANY OTHER THING WE MIGHT CONSIDER RELEVANT
-    
+        
     This is an example of how to run a command and get more details of the parameters for each command:\n
     python cli.py gif --help
     """
@@ -31,7 +28,7 @@ def cli():
 @click.command()
 @click.option('--dir_path', '-d',
               help='Path to the directory with the tiff files.')
-@click.option('--save', '-s',
+@click.option('--save', '-s', is_flag=True,
               help='Save the GIF.It will be saved with the same name in the directory passed, with a .gif extension',
               default=False)
 def gif(dir_path, save):
@@ -60,12 +57,8 @@ def gif(dir_path, save):
 @click.option('--save', '-s',
               help='Save the plot.It will be saved with the same name in the directory passed, with a .png extension',
               default=False)
-@click.option('--type', '-t', type=click.Choice(['single', 'multiple']),
-              help='single or multiple dishes per plot')
-# add new option -- dish or whatever, list of integers specifying the actualy dish number.[1, 2, 3]
-# for either single or multiple, have options of what dishes
-# fix creat_dict in helper function to split on _ and identify the dish number, so its {dish#: (tif, roi)}
-
+@click.option('--type', '-t', type=click.Choice(['per_dish', 'combined']),
+              help='one petri-dish per plot or combine multiple dishes into one plot')
 def fluo_plot(dir_path, save, type):
     """
     This command will generate a fluorecense plot for each of the tiff:roi pairs in the folder passed.
@@ -79,14 +72,13 @@ def fluo_plot(dir_path, save, type):
     dir_check(dir_path)
     plot_dic = create_dict(dir_path)
     
-    if type == 'single':
+    if type == 'per_dish':
         for plot_i in plot_dic:
             plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
             print("Creating Single Fluoresence Over Time Plot")
             plotter.plot_fluor_over_time(save=save)
-    elif type == 'multiple':
-        pass 
-
+    elif type == 'combined':
+        print("This feature is not yet available")
 
 @click.command()
 @click.option('--dir_path', '-d',
@@ -94,8 +86,8 @@ def fluo_plot(dir_path, save, type):
 @click.option('--save', '-s',
               help='Save the plot.It will be saved with the same name in the directory passed, with a .png extension',
               default=False)
-@click.option('--type', '-t', type=click.Choice(['single', 'multiple']),
-              help='single or multiple dishes per plot')
+@click.option('--type', '-t', type=click.Choice(['per_dish', 'combined']),
+              help='one petri-dish per plot or combine multiple dishes into one plot')
 @click.option('--best_fit', '-bf', 
               help= "Plot the line of best fit onto the decay plot")
 @click.option('--color_cell', '-c', 
@@ -115,13 +107,13 @@ def decay_plot(dir_path, save, type, best_fit, color_cell):
     dir_check(dir_path)
     plot_dic = create_dict(dir_path)
     
-    if type == 'single':
+    if type == 'per_dish':
         for plot_i in plot_dic:
             plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
             print("Creating Single Fluoresence Over Time Plot")
             plotter.plot_decay_over_time(save=save,want_best_fit=best_fit, color_by_cell=color_cell)
-    elif type == 'multiple':
-        pass 
+    elif type == 'combined':
+        print("This feature is not yet available")
 
 
 @click.command()
