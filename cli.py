@@ -37,7 +37,7 @@ def gif(dir_path, save):
     If you do not specify to save, it will display the GIFs instead.
     
     Here is an example of how to save:\n
-    python cli.py gif --dir_path path/to/folder --save True
+    python cli.py gif --dir_path path/to/folder --save
     """
 
     dir_check(dir_path)
@@ -54,10 +54,11 @@ def gif(dir_path, save):
 @click.command()
 @click.option('--dir_path', '-d',
               help='Path to the directory with the tiff files.')
-@click.option('--save', '-s',
+@click.option('--save', '-s', is_flag=True,
               help='Save the plot.It will be saved with the same name in the directory passed, with a .png extension',
               default=False)
 @click.option('--type', '-t', type=click.Choice(['per_dish', 'combined']),
+              required=True,
               help='one petri-dish per plot or combine multiple dishes into one plot')
 def fluo_plot(dir_path, save, type):
     """
@@ -66,7 +67,9 @@ def fluo_plot(dir_path, save, type):
     You can also choose whether you want to plot one dish or multiple dishes per plot.
     
     Here is an example of how to create and save a fluorecense plot with one dish per plot:\n
-    python cli.py fluo-plot --dir_path path/to/folder --type single --save True
+    python cli.py fluo-plot --dir_path path/to/folder --type per_dish --save \n
+    OR \n
+    python cli.py fluo-plot -d path/to/folder --t per_dish -s
 
     """
     dir_check(dir_path)
@@ -83,14 +86,15 @@ def fluo_plot(dir_path, save, type):
 @click.command()
 @click.option('--dir_path', '-d',
               help='Path to the directory with the tiff files.')
-@click.option('--save', '-s',
+@click.option('--save', '-s', is_flag=True,
               help='Save the plot.It will be saved with the same name in the directory passed, with a .png extension',
               default=False)
 @click.option('--type', '-t', type=click.Choice(['per_dish', 'combined']),
+                required=True,
               help='one petri-dish per plot or combine multiple dishes into one plot')
-@click.option('--best_fit', '-bf', 
+@click.option('--best_fit', '-bf',  is_flag=True, default=False,
               help= "Plot the line of best fit onto the decay plot")
-@click.option('--color_cell', '-c', 
+@click.option('--color_cell', '-c', is_flag=True, default=False,
               help='Will make each cell in the plot a different color')
 def decay_plot(dir_path, save, type, best_fit, color_cell):    
     """
@@ -100,8 +104,10 @@ def decay_plot(dir_path, save, type, best_fit, color_cell):
     Additionally, you can decide whether you want to include the line of best fit onto the plot, 
     and if you want to make each cell in the plot a different color.
     
-    Here is an example of how to create and save a fluorecense plot with one dish per plot with each cell being a different color:\n
-    python cli.py decay-plot --dir_path path/to/folder --type single --save True --color_cell True
+    Here is an example of how to create and save a decay fluorecense plot with one dish per plot with each cell being a different color and the line of best fit:\n
+    python cli.py decay-plot --dir_path path/to/folder --type per_dish --save  --color_cell --best_fit \n
+    OR \n
+    python cli.py decay-plot -d path/to/folder --t per_dish -s -c -bf
 
     """
     dir_check(dir_path)
@@ -110,7 +116,7 @@ def decay_plot(dir_path, save, type, best_fit, color_cell):
     if type == 'per_dish':
         for plot_i in plot_dic:
             plotter = Plotter(plot_dic[plot_i][0], plot_dic[plot_i][1], 'katielane', desired_contrast=5.0)
-            print("Creating Single Fluoresence Over Time Plot")
+            print("Creating Decay Fluoresence Over Time Plot Per Petri Dish")
             plotter.plot_decay_over_time(save=save,want_best_fit=best_fit, color_by_cell=color_cell)
     elif type == 'combined':
         print("This feature is not yet available")
