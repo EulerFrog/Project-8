@@ -1,0 +1,14 @@
+celldetection==0.4.9
+click==8.0.3
+matplotlib==3.5.1
+numpy==1.21.5
+opencv_python==4.9.0.80
+pandas==2.0.2
+Pillow==9.5.0
+Pillow==9.0.1
+Pillow==11.0.0
+roifile==2024.9.15
+scipy==1.8.0
+skimage==0.0
+tifffile==2024.9.20
+torch==2.3.1
