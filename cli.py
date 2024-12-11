@@ -6,12 +6,6 @@ from plots import Plotter
 from helper_fn import dir_check, create_dict
 from compute_regions import compute_regions, save_csv
 
-# notes:
-# save functionality for gif, nor for fluo or decay plots working.
-# can we make sure they are named the same with exception of the extension and also just go back into the
-# path they pass.
-# make sure that line of best fit default is the same whether we want to do color by cell or not.
-
 @click.group()
 def cli():
     """
