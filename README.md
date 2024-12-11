@@ -28,17 +28,19 @@ The program, written in Python, is designed to be user-friendly for biology stud
 ### Prerequisites
 - Python 3.7 or higher
 - Required Python libraries:
+  - `cell-detection`
   - `click`
-  - `PIL`
   - `matplotlib`
-  - `seaborn`
-  - `scipy`
-  - `roifile`
-  - `tifffile`
-  - `argparse`
   - `numpy`
   - `cv2`
   - `pandas`
+  - `PIL`
+  - `roifile`
+  - `scipy`
+  - `seaborn`
+  - `tifffile`
+  - `argparse`
+  - `pytorch`
 
 ### Setup
 1. Clone the repository:
